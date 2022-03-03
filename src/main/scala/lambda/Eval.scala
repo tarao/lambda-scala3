@@ -2,7 +2,7 @@ package lambda
 
 import scala.compiletime.ops.{any, int}
 
-// leftmost-outrmost strategy
+// leftmost-outermost strategy
 object Eval {
   type Shift[T <: DeBruijn.Term, I <: Int, D <: Int] <: DeBruijn.Term =
     T match {
