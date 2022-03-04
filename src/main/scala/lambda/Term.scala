@@ -41,6 +41,11 @@ object Show {
     }
 }
 
+type ReadEvalPrint[Src <: String] <: String =
+  Src match {
+    case _ => Show[Eval[Parse[Src]]]
+  }
+
 object Term {
   type Of[T <: DeBruijn.Term] <: Term =
     T match {
