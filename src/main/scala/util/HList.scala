@@ -19,6 +19,11 @@ object HList {
         }
       case HNil => (0, false)
     }
+
+  type Concat[L1 <: HList, L2 <: HList] <: HList = L1 match {
+    case h :+: t => h :+: Concat[t, L2]
+    case HNil    => L2
+  }
 }
 
 sealed trait HNil extends HList
