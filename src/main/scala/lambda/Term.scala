@@ -21,8 +21,8 @@ type Show[T <: Term] <: String =
 object Show {
   type AbsBody[T <: Term] <: String =
     T match {
-      case Var[_]      => string.+[".", Show[T]]
-      case Abs[v, t]   => string.+[v, AbsBody[t]]
+      case Var[_]    => string.+[".", Show[T]]
+      case Abs[v, t] => string.+[v, AbsBody[t]]
       case App[_, _] => string.+[".", Show[T]]
     }
 
