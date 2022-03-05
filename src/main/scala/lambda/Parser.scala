@@ -4,13 +4,6 @@ import scala.compiletime.ops.{boolean, int, string}
 import scala.compiletime.ops.string.{Length, Matches, Substring}
 import util.{:+:, HList, HNil}
 
-sealed trait ParseResult
-case class ParsedTerm[T <: Term, R <: String](term: T, rest: R) extends ParseResult
-case class ParseError[R <: String](reason: R) extends ParseResult with ParseAppResult
-
-sealed trait ParseAppResult
-case class ParsedApp[L <: HList, R <: String](list: L, rest: R) extends ParseAppResult
-
 type Parse[Src <: String] =
   Parser.ParseExp[Src] match {
     case ParsedTerm[t, rest] => rest match {
@@ -19,6 +12,13 @@ type Parse[Src <: String] =
     }
     case ParseError[s] => ParseError[s]
   }
+
+sealed trait ParseResult
+case class ParsedTerm[T <: Term, R <: String](term: T, rest: R) extends ParseResult
+case class ParseError[R <: String](reason: R) extends ParseResult with ParseAppResult
+
+sealed trait ParseAppResult
+case class ParsedApp[L <: HList, R <: String](list: L, rest: R) extends ParseAppResult
 
 @annotation.experimental // Length, Matches, Substring
 object Parser {
