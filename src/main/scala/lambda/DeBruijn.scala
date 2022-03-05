@@ -1,5 +1,7 @@
 package lambda
 
+import util.{:+:, HList, HNil}
+
 object DeBruijn {
   sealed trait Term
   case class Var[I <: Int, V <: String](i: I, v: V) extends Term
@@ -8,15 +10,14 @@ object DeBruijn {
 
   type Of[T <: lambda.Term] <: Term =
     T match {
-      case _ => Of.Transform[T, util.HNil]
+      case _ => Of.Transform[T, HNil]
     }
   object Of {
-    import util.:+:
 
-    type Transform[T <: lambda.Term, L <: util.HList] <: Term =
+    type Transform[T <: lambda.Term, L <: HList] <: Term =
       T match {
         case lambda.Var[v]      =>
-          util.HList.Index[v, L] match {
+          HList.Index[v, L] match {
             case (i, _) => Var[i, v]
           }
         case lambda.Abs[v, t]   => Abs[v, Transform[t, v :+: L]]
