@@ -15,10 +15,7 @@ type Parse[Src <: String] =
 
 sealed trait ParseResult
 case class ParsedTerm[T <: Term, R <: String](term: T, rest: R) extends ParseResult
-case class ParseError[R <: String](reason: R) extends ParseResult with ParseAppResult
-
-sealed trait ParseAppResult
-case class ParsedApp[L <: HList, R <: String](list: L, rest: R) extends ParseAppResult
+case class ParseError[R <: String](reason: R) extends ParseResult
 
 @annotation.experimental // Length, Matches, Substring
 object Parser {
@@ -34,11 +31,7 @@ object Parser {
   type ParseExp[Src <: String] <: ParseResult =
     SafeSubstring[Src, 0, 1] match {
       case "λ" => ParseAbs[HNil, Substring[Src, 1, Length[Src]]]
-      case _    => ParseApp[Src] match {
-        case ParsedApp[list, rest] => ParsedTerm[MakeApp[list], rest]
-        case ParseError[s]       => ParseError[s]
-        case _                   => ParseError["unexpected"]
-      }
+      case _    => ParseApp[Src]
     }
 
   type ParseAbs[Args <: HList, Src <: String] <: ParseResult =
@@ -56,19 +49,19 @@ object Parser {
       }
     }
 
-  type ParseApp[Src <: String] <: ParseAppResult =
+  type ParseApp[Src <: String] <: ParseResult =
     ParsePrimary[Src] match {
-      case ParsedTerm[t, rest] => rest match {
-        case "" => ParsedApp[t :+: HNil, ""]
-        case _  => SafeSubstring[rest, 0, 1] match {
-          case " " => ParseApp[Substring[rest, 1, Length[rest]]] match {
-            case ParsedApp[list, rest] => ParsedApp[t :+: list, rest]
-            case ParseError[s]         => ParseError[s]
-          }
-          case _ => ParsedApp[t :+: HNil, rest]
-        }
+      case ParsedTerm[t, rest] => ParseApp1[t, rest]
+      case ParseError[s]       => ParseError[s]
+    }
+
+  type ParseApp1[Prev <: Term, Src <: String] <: ParseResult =
+    SafeSubstring[Src, 0, 1] match {
+      case " " => ParsePrimary[Substring[Src, 1, Length[Src]]] match {
+        case ParsedTerm[t, rest] => ParseApp1[App[Prev, t], rest]
+        case ParseError[s]       => ParseError[s]
       }
-      case ParseError[s] => ParseError[s]
+      case _ => ParsedTerm[Prev, Src]
     }
 
   type ParsePrimary[Src <: String] <: ParseResult =
@@ -90,20 +83,6 @@ object Parser {
     Args match {
       case v :+: rest => MakeAbs[rest, Abs[v, T]]
       case HNil       => T
-    }
-
-  type MakeApp[L <: HList] <: Term =
-    L match {
-      case Var[v] :+: HNil      => Var[v]
-      case Abs[v, t] :+: HNil   => Abs[v, t]
-      case App[t1, t2] :+: HNil => App[t1, t2]
-      case t1 :+: t2 :+: rest   => MakeApp1[App[t1, t2], rest]
-    }
-
-  type MakeApp1[T <: Term, L <: HList] <: Term =
-    L match {
-      case HNil       => T
-      case t :+: rest => MakeApp1[App[T, t], rest]
     }
 
   type SafeSubstring[S <: String, IBeg <: Int, IEnd <: Int] <: String =
